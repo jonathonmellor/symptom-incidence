@@ -2,7 +2,7 @@
 
 Code for the upcoming manuscript: "Evaluating Google Trends as a Proxy for Symptom Incidence: Insights from the Winter COVID Infection Study in England 2023/24"
 
-Authors: Phoebe Asplin, Martyn Fyles Jack Kennedy, Thomas Ward, Jonathon Mellor.
+Authors: Phoebe Asplin (@pasplin), Martyn Fyles, Jack Kennedy (@jcken95), Thomas Ward, and Jonathon Mellor (@jonathonmellor).
 
 Due to the disclosive nature of the patient level data used in this project the data is only available upon request. The code in this repository therefore does not run and is instead provided by the authors to illustrate the processing and modelling completed.
 

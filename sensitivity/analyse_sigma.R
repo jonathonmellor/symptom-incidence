@@ -20,8 +20,10 @@ source(here::here("utils.R"))
 
 formulas <- list(
   "mu" = brms::bf(mu ~ 1 + age_group),
-  "mu_sigma" = brms::bf(mu ~ 1 + age_group,
-    sigma ~ 1 + age_group)
+  "mu_sigma" = brms::bf(
+    mu ~ 1 + age_group,
+    sigma ~ 1 + age_group
+  )
 )
 
 age_group_labels <- c("3-17", "18-34", "35-44", "45-54", "55-64", "65-74", "75+")
@@ -34,20 +36,24 @@ symptom_labels <- c(
   "loss_smell" = "Loss of smell"
 )
 
-draws_cmb <- purrr::pmap(tidyr::expand_grid("symptom_name" = symptom_opts,
-  "formula_name" = names(formulas)) |> as.list(),
-function(symptom_name, formula_name) {
-  readr::read_csv(
-    file = here::here(
-      "outputs",
-      "data",
-      "sensitivity",
-      "duration",
-      "sigma_analysis",
-      glue::glue("symptom_durations_samples_{symptom_name}_{formula_name}.csv")
-    )
-  ) |> dplyr::mutate(formula_name = formula_name)
-}) |>
+draws_cmb <- purrr::pmap(
+  tidyr::expand_grid(
+    "symptom_name" = symptom_opts,
+    "formula_name" = names(formulas)
+  ) |> as.list(),
+  function(symptom_name, formula_name) {
+    readr::read_csv(
+      file = here::here(
+        "outputs",
+        "data",
+        "sensitivity",
+        "duration",
+        "sigma_analysis",
+        glue::glue("symptom_durations_samples_{symptom_name}_{formula_name}.csv")
+      )
+    ) |> dplyr::mutate(formula_name = formula_name)
+  }
+) |>
   dplyr::bind_rows()
 
 symptom_durations_cmb <- tidyr::expand_grid(
@@ -81,14 +87,16 @@ mean_dur_plot <- draws_cmb |>
 
 mean_dur_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "sensitivity",
-  "duration",
-  "window",
-  glue::glue("dur_plot_mean_all_windows.png")
-),
-mean_dur_plot,
-height = 8,
-width = 14)
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "sensitivity",
+    "duration",
+    "window",
+    glue::glue("dur_plot_mean_all_windows.png")
+  ),
+  mean_dur_plot,
+  height = 8,
+  width = 14
+)

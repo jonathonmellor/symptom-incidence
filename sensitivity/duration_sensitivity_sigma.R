@@ -23,16 +23,16 @@ fs::dir_create(here::here(
   "figures",
   "sensitivity",
   "duration",
-  "sigma_analysis")
-)
+  "sigma_analysis"
+))
 
 fs::dir_create(here::here(
   "outputs",
   "data",
   "sensitivity",
   "duration",
-  "sigma_analysis")
-)
+  "sigma_analysis"
+))
 
 ggplot2::theme_set(ggplot2::theme_bw())
 
@@ -48,8 +48,10 @@ symptom_opts <- c(
 # choose formula
 formulas <- list(
   "mu" = brms::bf(mu ~ 1 + age_group),
-  "mu_sigma" = brms::bf(mu ~ 1 + age_group,
-    sigma ~ 1 + age_group)
+  "mu_sigma" = brms::bf(
+    mu ~ 1 + age_group,
+    sigma ~ 1 + age_group
+  )
 )
 
 symptom_labels <- c(
@@ -113,9 +115,13 @@ for (formula_name in names(formulas)) {
         sdate_lwr = submitted_at + 1,
         sdate_upr = sdate_lwr + 1 + 3
       ) |>
-      dplyr::summarise(n = dplyr::n(),
-        .by = c("pdate_lwr", "pdate_upr",
-          "sdate_lwr", "sdate_upr", "age_group")) |>
+      dplyr::summarise(
+        n = dplyr::n(),
+        .by = c(
+          "pdate_lwr", "pdate_upr",
+          "sdate_lwr", "sdate_upr", "age_group"
+        )
+      ) |>
       epidist::as_epidist_aggregate_data() |>
       epidist::as_epidist_marginal_model()
 
@@ -134,8 +140,10 @@ for (formula_name in names(formulas)) {
     # generate samples
     draws <- data_prep |>
       modelr::data_grid(age_group) |>
-      dplyr::mutate(relative_obs_time = NA, pwindow = NA, swindow = NA,
-        delay_upr = NA) |>
+      dplyr::mutate(
+        relative_obs_time = NA, pwindow = NA, swindow = NA,
+        delay_upr = NA
+      ) |>
       tidybayes::add_epred_draws(fit, dpar = TRUE) |>
       dplyr::ungroup() |>
       dplyr::select(age_group, .draw, mu, sigma) |>
@@ -145,8 +153,7 @@ for (formula_name in names(formulas)) {
     print(draws |>
       dplyr::mutate(exp_dur = exp(mu + sigma^2 / 2)) |>
       dplyr::summarise(mean_dur = mean(exp_dur), .by = age_group) |>
-      dplyr::arrange(age_group)
-    )
+      dplyr::arrange(age_group))
 
 
     # write up
@@ -196,7 +203,8 @@ for (formula_name in names(formulas)) {
     ) |>
     ggplot() +
     geom_ribbon(aes(x = duration, ymax = pi_95, ymin = pi_5, fill = symptom, group = symptom),
-      alpha = 0.5) +
+      alpha = 0.5
+    ) +
     geom_line(aes(x = duration, y = pi_50, color = symptom, group = symptom)) +
     xlim(0, 100) +
     labs(x = "Duration (days)", y = "Probability density") +
@@ -209,17 +217,19 @@ for (formula_name in names(formulas)) {
     theme(legend.position = "none")
 
   # save figure
-  ggplot2::ggsave(here::here(
-    "outputs",
-    "figures",
-    "sensitivity",
-    "duration",
-    "sigma_analysis",
-    glue::glue("dur_plot_cmb_{formula_name}.png")
-  ),
-  dur_plot_cmb,
-  height = 10,
-  width = 8)
+  ggplot2::ggsave(
+    here::here(
+      "outputs",
+      "figures",
+      "sensitivity",
+      "duration",
+      "sigma_analysis",
+      glue::glue("dur_plot_cmb_{formula_name}.png")
+    ),
+    dur_plot_cmb,
+    height = 10,
+    width = 8
+  )
 
   age_group_labels <- c("3-17", "18-34", "35-44", "45-54", "55-64", "65-74", "75+")
 
@@ -245,17 +255,18 @@ for (formula_name in names(formulas)) {
     theme(legend.position = "none")
 
   # save figure
-  ggplot2::ggsave(here::here(
-    "outputs",
-    "figures",
-    "sensitivity",
-    "duration",
-    "sigma_analysis",
-    glue::glue("dur_plot_mean_{formula_name}.png")
-  ),
-  mean_dur_plot,
-  height = 3,
-  width = 14)
-
+  ggplot2::ggsave(
+    here::here(
+      "outputs",
+      "figures",
+      "sensitivity",
+      "duration",
+      "sigma_analysis",
+      glue::glue("dur_plot_mean_{formula_name}.png")
+    ),
+    mean_dur_plot,
+    height = 3,
+    width = 14
+  )
 }
 message("SIGMA ANALYSIS MODELLING DONE")

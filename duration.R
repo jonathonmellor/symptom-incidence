@@ -29,8 +29,8 @@ source(here::here("load_data.R"))
 fs::dir_create(here::here(
   "outputs",
   "figures",
-  "duration")
-)
+  "duration"
+))
 
 ggplot2::theme_set(ggplot2::theme_bw())
 
@@ -106,9 +106,13 @@ for (symptom_name in symptom_opts) {
       sdate_lwr = submitted_at + 1,
       sdate_upr = sdate_lwr + 1 + window_extension
     ) |>
-    dplyr::summarise(n = dplyr::n(),
-      .by = c("pdate_lwr", "pdate_upr",
-        "sdate_lwr", "sdate_upr", "age_group")) |>
+    dplyr::summarise(
+      n = dplyr::n(),
+      .by = c(
+        "pdate_lwr", "pdate_upr",
+        "sdate_lwr", "sdate_upr", "age_group"
+      )
+    ) |>
     epidist::as_epidist_aggregate_data() |>
     epidist::as_epidist_marginal_model()
 
@@ -128,8 +132,10 @@ for (symptom_name in symptom_opts) {
   # run model with age group as a covariate
   fit <- data_prep |>
     epidist::epidist(
-      formula = brms::bf(mu ~ 1 + age_group,
-        sigma ~ 1 + age_group),
+      formula = brms::bf(
+        mu ~ 1 + age_group,
+        sigma ~ 1 + age_group
+      ),
       algorithm = "sampling",
       iter = 1000,
       cores = 2,
@@ -141,8 +147,10 @@ for (symptom_name in symptom_opts) {
   # generate samples
   draws <- data_prep |>
     modelr::data_grid(age_group) |>
-    dplyr::mutate(relative_obs_time = NA, pwindow = NA, swindow = NA,
-      delay_upr = NA) |>
+    dplyr::mutate(
+      relative_obs_time = NA, pwindow = NA, swindow = NA,
+      delay_upr = NA
+    ) |>
     tidybayes::add_epred_draws(fit, dpar = TRUE) |>
     dplyr::ungroup() |>
     dplyr::select(age_group, .draw, mu, sigma) |>
@@ -152,8 +160,7 @@ for (symptom_name in symptom_opts) {
   print(draws |>
     dplyr::mutate(exp_dur = exp(mu + sigma^2 / 2)) |>
     dplyr::summarise(mean_dur = mean(exp_dur), .by = age_group) |>
-    dplyr::arrange(age_group)
-  )
+    dplyr::arrange(age_group))
 
 
   # write up
@@ -196,7 +203,8 @@ dur_plot_cmb <- symptom_durations_cmb |>
   ) |>
   ggplot() +
   geom_ribbon(aes(x = duration, ymax = pi_95, ymin = pi_5, fill = symptom, group = symptom),
-    alpha = 0.5) +
+    alpha = 0.5
+  ) +
   geom_line(aes(x = duration, y = pi_50, color = symptom, group = symptom)) +
   xlim(0, 100) +
   labs(x = "Duration (days)", y = "Probability density") +
@@ -209,15 +217,17 @@ dur_plot_cmb <- symptom_durations_cmb |>
   theme(legend.position = "none")
 
 # save figure
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "duration",
-  "dur_plot_cmb.png"
-),
-dur_plot_cmb,
-height = 10,
-width = 8)
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "duration",
+    "dur_plot_cmb.png"
+  ),
+  dur_plot_cmb,
+  height = 10,
+  width = 8
+)
 
 age_group_labels <- c("3-17", "18-34", "35-44", "45-54", "55-64", "65-74", "75+")
 
@@ -243,15 +253,17 @@ mean_dur_plot <- draws_cmb |>
   theme(legend.position = "none")
 
 # save figure
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "duration",
-  "dur_plot_mean.png"
-),
-mean_dur_plot,
-height = 3,
-width = 14)
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "duration",
+    "dur_plot_mean.png"
+  ),
+  mean_dur_plot,
+  height = 3,
+  width = 14
+)
 
 sf_digits <- 3
 sf_format <- "fg"
@@ -266,13 +278,17 @@ mean_dur_table <- draws_cmb |>
     .q5 = quantile(exp_dur, 0.05),
     .by = c("age_group", "symptom")
   ) |>
-  dplyr::mutate(age_group = factor(age_group, levels = age_group_order),
-    symptom = symptom_labels[symptom]) |>
+  dplyr::mutate(
+    age_group = factor(age_group, levels = age_group_order),
+    symptom = symptom_labels[symptom]
+  ) |>
   dplyr::arrange(age_group) |>
-  dplyr::mutate(duration = glue::glue("{formatC(signif(.mean, digits=sf_digits),",
+  dplyr::mutate(duration = glue::glue(
+    "{formatC(signif(.mean, digits=sf_digits),",
     " format=sf_format, digits=sf_digits,flag='#')}",
     " [{formatC(signif(.q5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
-    " {formatC(signif(.q95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]")) |>
+    " {formatC(signif(.q95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"
+  )) |>
   dplyr::select(-dplyr::starts_with(".")) |>
   tidyr::pivot_wider(values_from = duration, names_from = age_group)
 
@@ -284,7 +300,8 @@ readr::write_csv(
   file = here::here(
     "outputs",
     "tables",
-    "mean_duration.csv")
+    "mean_duration.csv"
+  )
 )
 
 

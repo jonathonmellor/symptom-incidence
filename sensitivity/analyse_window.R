@@ -31,20 +31,24 @@ symptom_labels <- c(
   "loss_smell" = "Loss of smell"
 )
 
-draws_cmb <- purrr::pmap(tidyr::expand_grid("symptom_name" = symptom_opts,
-  "window_extension" = window_extension_opts) |> as.list(),
-function(symptom_name, window_extension) {
-  readr::read_csv(
-    file = here::here(
-      "outputs",
-      "data",
-      "sensitivity",
-      "duration",
-      "window",
-      glue::glue("symptom_durations_samples_{symptom_name}_{window_extension}.csv")
+draws_cmb <- purrr::pmap(
+  tidyr::expand_grid(
+    "symptom_name" = symptom_opts,
+    "window_extension" = window_extension_opts
+  ) |> as.list(),
+  function(symptom_name, window_extension) {
+    readr::read_csv(
+      file = here::here(
+        "outputs",
+        "data",
+        "sensitivity",
+        "duration",
+        "window",
+        glue::glue("symptom_durations_samples_{symptom_name}_{window_extension}.csv")
+      )
     )
-  )
-}) |>
+  }
+) |>
   dplyr::bind_rows() |>
   # convergence issues with max delay so removed.
   dplyr::filter(window_extension != 10)
@@ -52,7 +56,7 @@ function(symptom_name, window_extension) {
 symptom_durations_cmb <- tidyr::expand_grid(
   draws_cmb,
   duration = seq(0, 100, by = 0.5)
-)  |>
+) |>
   dplyr::mutate(density = dlnorm(duration, mu, sigma))
 
 
@@ -80,14 +84,16 @@ mean_dur_plot <- draws_cmb |>
 
 mean_dur_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "sensitivity",
-  "duration",
-  "window",
-  glue::glue("dur_plot_mean_all_windows.png")
-),
-mean_dur_plot,
-height = 8,
-width = 14)
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "sensitivity",
+    "duration",
+    "window",
+    glue::glue("dur_plot_mean_all_windows.png")
+  ),
+  mean_dur_plot,
+  height = 8,
+  width = 14
+)

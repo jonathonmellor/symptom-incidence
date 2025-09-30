@@ -27,7 +27,8 @@ symptom_labels <- c(
   "loss_smell" = "Loss of smell"
 )
 
-draws_cmb_hmc <- purrr::pmap(tidyr::expand_grid("symptom_name" = symptom_opts) |> as.list(),
+draws_cmb_hmc <- purrr::pmap(
+  tidyr::expand_grid("symptom_name" = symptom_opts) |> as.list(),
   function(symptom_name) {
     readr::read_csv(
       file = here::here(
@@ -39,7 +40,8 @@ draws_cmb_hmc <- purrr::pmap(tidyr::expand_grid("symptom_name" = symptom_opts) |
         glue::glue("symptom_durations_samples_{symptom_name}.csv")
       )
     ) |> dplyr::mutate(sampling_method = "sigma varied")
-  }) |>
+  }
+) |>
   dplyr::bind_rows()
 
 draws_cmb_approx <- purrr::pmap(
@@ -52,7 +54,8 @@ draws_cmb_approx <- purrr::pmap(
         glue::glue("symptom_durations_samples_{symptom_name}.csv")
       )
     ) |> dplyr::mutate(sampling_method = "sigma fixed")
-  }) |>
+  }
+) |>
   dplyr::bind_rows()
 
 draws_cmb <- dplyr::bind_rows(
@@ -90,17 +93,19 @@ mean_dur_plot <- draws_cmb |>
 
 mean_dur_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "sensitivity",
-  "duration",
-  "window",
-  glue::glue("dur_plot_mean_all_windows.png")
-),
-mean_dur_plot,
-height = 8,
-width = 14)
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "sensitivity",
+    "duration",
+    "window",
+    glue::glue("dur_plot_mean_all_windows.png")
+  ),
+  mean_dur_plot,
+  height = 8,
+  width = 14
+)
 
 
 
@@ -116,7 +121,8 @@ dur_plot_cmb <- symptom_durations_cmb |>
   ) |>
   ggplot() +
   geom_ribbon(aes(x = duration, ymax = pi_95, ymin = pi_5, fill = sampling_method, group = sampling_method),
-    alpha = 0.5) +
+    alpha = 0.5
+  ) +
   geom_line(aes(x = duration, y = pi_50, color = sampling_method, group = sampling_method)) +
   xlim(0, 100) +
   labs(x = "Duration (days)", y = "Probability density") +

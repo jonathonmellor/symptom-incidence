@@ -1,5 +1,10 @@
 # storage of utility artifacts
 
+# dummy function for data (does not load any data)
+dummy_data_base <- function() {
+  warning("Dummy function. Does not return data.")
+  invisible(NULL)
+}
 
 #  age classification ####
 

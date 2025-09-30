@@ -23,16 +23,16 @@ fs::dir_create(here::here(
   "figures",
   "sensitivity",
   "duration",
-  "window")
-)
+  "window"
+))
 
 fs::dir_create(here::here(
   "outputs",
   "data",
   "sensitivity",
   "duration",
-  "window")
-)
+  "window"
+))
 
 ggplot2::theme_set(ggplot2::theme_bw())
 
@@ -51,7 +51,8 @@ symptom_opts <- c(
 # of interpretation
 window_extension_opts <- c(
   0, 3, 7,
-  10)
+  10
+)
 
 symptom_labels <- c(
   "cough" = "Cough",
@@ -113,17 +114,23 @@ for (window_extension in window_extension_opts) {
         sdate_lwr = submitted_at + 1,
         sdate_upr = sdate_lwr + 1 + window_extension
       ) |>
-      dplyr::summarise(n = dplyr::n(),
-        .by = c("pdate_lwr", "pdate_upr",
-          "sdate_lwr", "sdate_upr", "age_group")) |>
+      dplyr::summarise(
+        n = dplyr::n(),
+        .by = c(
+          "pdate_lwr", "pdate_upr",
+          "sdate_lwr", "sdate_upr", "age_group"
+        )
+      ) |>
       epidist::as_epidist_aggregate_data() |>
       epidist::as_epidist_marginal_model()
 
     # run model with age group as a covariate
     fit <- data_prep |>
       epidist::epidist(
-        formula = brms::bf(mu ~ 1 + age_group,
-          sigma ~ 1 + age_group),
+        formula = brms::bf(
+          mu ~ 1 + age_group,
+          sigma ~ 1 + age_group
+        ),
         algorithm = "sampling",
         iter = 1000,
         cores = 2,
@@ -134,13 +141,17 @@ for (window_extension in window_extension_opts) {
     # generate samples
     draws <- data_prep |>
       modelr::data_grid(age_group) |>
-      dplyr::mutate(relative_obs_time = NA, pwindow = NA, swindow = NA,
-        delay_upr = NA) |>
+      dplyr::mutate(
+        relative_obs_time = NA, pwindow = NA, swindow = NA,
+        delay_upr = NA
+      ) |>
       tidybayes::add_epred_draws(fit, dpar = TRUE) |>
       dplyr::ungroup() |>
       dplyr::select(age_group, .draw, mu, sigma) |>
-      dplyr::mutate(symptom = symptom_name,
-        window_extension = window_extension)
+      dplyr::mutate(
+        symptom = symptom_name,
+        window_extension = window_extension
+      )
 
     # mean duration by age group
     print(draws |>
@@ -195,7 +206,8 @@ for (window_extension in window_extension_opts) {
     ) |>
     ggplot() +
     geom_ribbon(aes(x = duration, ymax = pi_95, ymin = pi_5, fill = symptom, group = symptom),
-      alpha = 0.5) +
+      alpha = 0.5
+    ) +
     geom_line(aes(x = duration, y = pi_50, color = symptom, group = symptom)) +
     xlim(0, 100) +
     labs(x = "Duration (days)", y = "Probability density") +
@@ -208,17 +220,19 @@ for (window_extension in window_extension_opts) {
     theme(legend.position = "none")
 
   # save figure
-  ggplot2::ggsave(here::here(
-    "outputs",
-    "figures",
-    "sensitivity",
-    "duration",
-    "window",
-    glue::glue("dur_plot_cmb_{window_extension}.png")
-  ),
-  dur_plot_cmb,
-  height = 10,
-  width = 8)
+  ggplot2::ggsave(
+    here::here(
+      "outputs",
+      "figures",
+      "sensitivity",
+      "duration",
+      "window",
+      glue::glue("dur_plot_cmb_{window_extension}.png")
+    ),
+    dur_plot_cmb,
+    height = 10,
+    width = 8
+  )
 
   age_group_labels <- c("3-17", "18-34", "35-44", "45-54", "55-64", "65-74", "75+")
 
@@ -244,17 +258,18 @@ for (window_extension in window_extension_opts) {
     theme(legend.position = "none")
 
   # save figure
-  ggplot2::ggsave(here::here(
-    "outputs",
-    "figures",
-    "sensitivity",
-    "duration",
-    "window",
-    glue::glue("dur_plot_mean_{window_extension}.png")
-  ),
-  mean_dur_plot,
-  height = 3,
-  width = 14)
-
+  ggplot2::ggsave(
+    here::here(
+      "outputs",
+      "figures",
+      "sensitivity",
+      "duration",
+      "window",
+      glue::glue("dur_plot_mean_{window_extension}.png")
+    ),
+    mean_dur_plot,
+    height = 3,
+    width = 14
+  )
 }
 message("DURATION MODELLING DONE")

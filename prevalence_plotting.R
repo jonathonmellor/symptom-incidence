@@ -6,8 +6,8 @@ source(here::here("utils.R"))
 fs::dir_create(here::here(
   "outputs",
   "figures",
-  "prevalence")
-)
+  "prevalence"
+))
 
 ggplot2::theme_set(ggplot2::theme_bw())
 
@@ -69,14 +69,15 @@ age_plot <- prevalence |>
 
 age_plot
 
-ggplot2::ggsave(here::here(
-  "outputs", "figures",
-  "prevalence",
-  "age_prev.png"
-),
-age_plot,
-height = 12,
-width = 12
+ggplot2::ggsave(
+  here::here(
+    "outputs", "figures",
+    "prevalence",
+    "age_prev.png"
+  ),
+  age_plot,
+  height = 12,
+  width = 12
 )
 
 region_plot <- prevalence |>
@@ -99,15 +100,16 @@ region_plot <- prevalence |>
 
 region_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "prevalence",
-  "region_prev.png"
-),
-region_plot,
-height = 8,
-width = 12
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "prevalence",
+    "region_prev.png"
+  ),
+  region_plot,
+  height = 8,
+  width = 12
 )
 
 nation_plot <- prevalence |>
@@ -126,13 +128,14 @@ nation_plot <- prevalence |>
 
 nation_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "prevalence",
-  "nation_prev.png"
-),
-nation_plot,
-height = 8,
-width = 12
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "prevalence",
+    "nation_prev.png"
+  ),
+  nation_plot,
+  height = 8,
+  width = 12
 )

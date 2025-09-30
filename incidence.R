@@ -19,8 +19,8 @@ ggplot2::theme_set(ggplot2::theme_bw())
 fs::dir_create(here::here(
   "outputs",
   "figures",
-  "incidence")
-)
+  "incidence"
+))
 
 symptom_opts <- c(
   "cough",
@@ -48,9 +48,11 @@ prevalence_age <- purrr::imap(as.list(symptom_opts), function(symptom_name, ind)
 }) |>
   # combine into a single data frame
   dplyr::bind_rows() |>
-  dplyr::summarise(prevalence = sum(.p_n) / sum(population),
+  dplyr::summarise(
+    prevalence = sum(.p_n) / sum(population),
     population = sum(population),
-    .by = c("symptom", "submitted_at", ".draw", "age_group")) |>
+    .by = c("symptom", "submitted_at", ".draw", "age_group")
+  ) |>
   dplyr::rename(date = submitted_at)
 
 # get durations
@@ -69,22 +71,26 @@ duration_age <- purrr::imap(as.list(symptom_opts), function(symptom_name, ind) {
 
 # calculate incidence for each draw
 incidence <- dplyr::left_join(prevalence_age,
-                              duration_age,
-                              by = c("symptom", "age_group", ".draw")) |>
+  duration_age,
+  by = c("symptom", "age_group", ".draw")
+) |>
   dplyr::mutate(
     incidence = prevalence * population / exp_dur,
     # shift incidence back in time, since prevalence is by submission date
     min_date = min(date) - round(min(exp_dur) / 2),
     max_date = max(date) - round(max(exp_dur) / 2),
     date = date - round(exp_dur / 2),
-    .by = c("symptom")) |>
+    .by = c("symptom")
+  ) |>
   dplyr::filter((date >= min_date) & (date <= max_date))
 
 # calculate national incidence
 incidence_national <- incidence |>
-  dplyr::summarise(incidence = sum(incidence),
+  dplyr::summarise(
+    incidence = sum(incidence),
     population = sum(population),
-    .by = c("symptom", "date", ".draw"))
+    .by = c("symptom", "date", ".draw")
+  )
 
 # plot incidence by age
 incidence_plot <- incidence |>
@@ -94,11 +100,13 @@ incidence_plot <- incidence |>
     incidence_q5 = quantile(incidence, 0.05),
     incidence_q75 = quantile(incidence, 0.75),
     incidence_q25 = quantile(incidence, 0.25),
-    .by = c("symptom", "date", "age_group")) |>
+    .by = c("symptom", "date", "age_group")
+  ) |>
   dplyr::mutate(symptom = sub("_", " ", symptom)) |>
   ggplot() +
   geom_ribbon(aes(x = date, ymax = incidence_q95, ymin = incidence_q5, fill = symptom, group = symptom),
-    alpha = 0.6) +
+    alpha = 0.6
+  ) +
   geom_line(aes(x = date, y = incidence_q50, group = symptom)) +
   ylab("incidence") +
   xlab("date") +
@@ -119,11 +127,13 @@ incidence_national_plot <- incidence_national |>
     incidence_q5 = quantile(incidence, 0.05),
     incidence_q75 = quantile(incidence, 0.75),
     incidence_q25 = quantile(incidence, 0.25),
-    .by = c("symptom", "date")) |>
+    .by = c("symptom", "date")
+  ) |>
   dplyr::mutate(symptom = sub("_", " ", symptom)) |>
   ggplot() +
-  geom_ribbon(aes(x = date, ymax = incidence_q95, ymin =  incidence_q5, fill = symptom, group = symptom),
-    alpha = 0.6) +
+  geom_ribbon(aes(x = date, ymax = incidence_q95, ymin = incidence_q5, fill = symptom, group = symptom),
+    alpha = 0.6
+  ) +
   geom_line(aes(x = date, y = incidence_q50, group = symptom)) +
   ylab("incidence") +
   xlab("date") +
@@ -146,24 +156,28 @@ readr::write_csv(incidence,
 )
 
 # save figures
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "incidence",
-  "incidence_plot_age.png"
-),
-incidence_plot,
-height = 8,
-width = 12)
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "incidence",
+    "incidence_plot_age.png"
+  ),
+  incidence_plot,
+  height = 8,
+  width = 12
+)
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "incidence",
-  "incidence_plot_nation.png"
-),
-incidence_national_plot,
-height = 8,
-width = 12)
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "incidence",
+    "incidence_plot_nation.png"
+  ),
+  incidence_national_plot,
+  height = 8,
+  width = 12
+)
 
 message("INCIDENCE MODELLING DONE")

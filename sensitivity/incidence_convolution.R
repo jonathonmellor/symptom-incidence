@@ -20,15 +20,15 @@ data_output <- fs::dir_create(here::here(
   "data",
   "sensitivity",
   "incidence",
-  "convolution")
-)
+  "convolution"
+))
 plot_output <- fs::dir_create(here::here(
   "outputs",
   "figures",
   "sensitivity",
   "incidence",
-  "convolution")
-)
+  "convolution"
+))
 
 symptom_opts <- c(
   "cough",
@@ -63,9 +63,11 @@ prevalence_age <- purrr::imap(as.list(symptom_opts), function(symptom_name, ind)
 }) |>
   # combine into a single data frame
   dplyr::bind_rows() |>
-  dplyr::summarise(prevalence = sum(.p_n) / sum(population),
+  dplyr::summarise(
+    prevalence = sum(.p_n) / sum(population),
     population = sum(population),
-    .by = c("symptom", "submitted_at", ".draw", "age_group")) |>
+    .by = c("symptom", "submitted_at", ".draw", "age_group")
+  ) |>
   dplyr::rename(date = submitted_at) |>
   dplyr::arrange(date)
 
@@ -91,8 +93,10 @@ distribution_size <- 60
 # generate the draws for the delay convolution for each age group and symptom
 duration_age_dist <- duration_age |>
   tidyr::expand_grid(symp_day = seq(0, distribution_size)) |>
-  dplyr::mutate(delay_pmf = dlnorm(x = symp_day, meanlog = mu, sdlog = sigma),
-    .by = c("age_group", ".draw", "symptom"))
+  dplyr::mutate(
+    delay_pmf = dlnorm(x = symp_day, meanlog = mu, sdlog = sigma),
+    .by = c("age_group", ".draw", "symptom")
+  )
 
 # the deconvolution is an iterative algorithm, how close to fit it?
 tol <- 1e-4
@@ -110,53 +114,56 @@ incidence_raw <- data.frame()
 for (symptom_i in symptom_opts) {
   message(symptom_i)
   for (age_group_i in unique(duration_age$age_group)) {
-
     message(age_group_i)
-    for (draw_i in seq(min(duration_age_dist$.draw), max(duration_age_dist$.draw)
-    )) {
-
+    for (draw_i in seq(min(duration_age_dist$.draw), max(duration_age_dist$.draw))) {
       if (draw_i %% 100 == 0) message(draw_i)
 
       # select a specific iteration of the duration distribution
       # as per usual, we are matching .draws across data sets,
       # which is arbitrary as they are not jointly modelled.
       dist <- duration_age_dist |>
-        dplyr::filter(symptom == symptom_i,
+        dplyr::filter(
+          symptom == symptom_i,
           age_group == age_group_i,
-          .draw == draw_i)
+          .draw == draw_i
+        )
 
       # take prevalence of a given age/symptom and deconvolve with the
       # duration distribution draw.
       incidence_i <- prevalence_age |>
-        dplyr::filter(symptom == symptom_i,
+        dplyr::filter(
+          symptom == symptom_i,
           age_group == age_group_i,
-          .draw == draw_i) |>
+          .draw == draw_i
+        ) |>
         dplyr::summarise(
-          incidence = fastbeta::deconvolve(x = prevalence,
+          incidence = fastbeta::deconvolve(
+            x = prevalence,
             # all symptoms are observed
             prob = 1,
             # pass in the time delay
             delay = dist$delay_pmf,
             # arbitrary tolerate level
-            tol = tol)$value |>
+            tol = tol
+          )$value |>
             # the deconvolution pads the end of the time series, which we don't want
             utils::tail(-distribution_size),
           # keep in population for ease of weighting
           population = unique(population),
           .by = c(".draw", "symptom", "age_group")
         ) |>
-        dplyr::mutate(t = dplyr::row_number(),
+        dplyr::mutate(
+          t = dplyr::row_number(),
           # we have moved backward in time, but not yet scaled
-          incidence = incidence / dist$exp_dur[1])
+          incidence = incidence / dist$exp_dur[1]
+        )
 
       # add the data back together
       incidence_raw <- dplyr::bind_rows(
         incidence_raw,
         incidence_i
       )
-
     }
-
   }
 }
 
@@ -167,8 +174,10 @@ incidence_regional <- incidence_raw |>
 
 # aggregate up with a population weighted sum
 incidence_national <- incidence_regional |>
-  dplyr::summarise(incidence = sum(incidence * population / sum(population)),
-    .by = c("date", "symptom", ".draw")) |>
+  dplyr::summarise(
+    incidence = sum(incidence * population / sum(population)),
+    .by = c("date", "symptom", ".draw")
+  ) |>
   dplyr::mutate(age_group = "All")
 
 # bring together matching formatting of original incidence
@@ -189,16 +198,18 @@ readr::write_csv(incidence,
 # read in and summarise
 incidence_new_method <- vroom::vroom(
   fs::path(data_output, "symptom_incidence.csv")
-) |> dplyr::mutate(
-  incidence = 1000 * incidence
 ) |>
+  dplyr::mutate(
+    incidence = 1000 * incidence
+  ) |>
   dplyr::summarise(
     pi_50 = quantile(incidence, 0.5, na.rm = TRUE),
     pi_95 = quantile(incidence, 0.95, na.rm = TRUE),
     pi_5 = quantile(incidence, 0.05, na.rm = TRUE),
     pi_75 = quantile(incidence, 0.75, na.rm = TRUE),
     pi_25 = quantile(incidence, 0.25, na.rm = TRUE),
-    .by = c("symptom", "age_group", "date")) |>
+    .by = c("symptom", "age_group", "date")
+  ) |>
   dplyr::mutate(data = "Deconvolution")
 
 
@@ -213,15 +224,19 @@ wcis_data <- readr::read_csv(
     "symptom_incidence.csv"
   )
 ) |>
-  dplyr::summarise(incidence = sum(incidence),
+  dplyr::summarise(
+    incidence = sum(incidence),
     population = sum(population),
-    .by = c("symptom", "date", "age_group", ".draw"))
+    .by = c("symptom", "date", "age_group", ".draw")
+  )
 
 # combine all ages and national into one data frame
 wcis_samples <- wcis_data |>
-  dplyr::summarise(incidence = sum(incidence),
+  dplyr::summarise(
+    incidence = sum(incidence),
     population = sum(population),
-    .by = c("symptom", "date", ".draw")) |>
+    .by = c("symptom", "date", ".draw")
+  ) |>
   dplyr::mutate(age_group = "All") |>
   dplyr::bind_rows(wcis_data)
 
@@ -235,7 +250,8 @@ wcis_summary <- wcis_samples |>
     pi_5 = quantile(incidence, 0.05),
     pi_75 = quantile(incidence, 0.75),
     pi_25 = quantile(incidence, 0.25),
-    .by = c("symptom", "age_group", "date")) |>
+    .by = c("symptom", "age_group", "date")
+  ) |>
   dplyr::mutate(data = "Fixed back-shift")
 
 
@@ -254,8 +270,10 @@ combined_incidence <- dplyr::bind_rows(
 
 # make plot for supplement
 convolution_plot <- combined_incidence |>
-  dplyr::mutate(data = factor(data, level = c("Fixed back-shift", "Deconvolution")),
-    age_group = factor(age_group, levels = c("All", age_group_order))) |>
+  dplyr::mutate(
+    data = factor(data, level = c("Fixed back-shift", "Deconvolution")),
+    age_group = factor(age_group, levels = c("All", age_group_order))
+  ) |>
   ggplot() +
   geom_line(aes(x = date, y = pi_50, group = data, color = data)) +
   geom_ribbon(aes(x = date, ymax = pi_95, ymin = pi_5, group = data, fill = data), alpha = 0.5) +
@@ -274,7 +292,8 @@ convolution_plot <- combined_incidence |>
   ) +
   theme(
     axis.text.x = element_text(size = 12),
-    legend.position = "bottom") +
+    legend.position = "bottom"
+  ) +
   scale_fill_viridis_d(direction = 1, begin = 0.0, end = 0.7) +
   scale_colour_viridis_d(direction = 1, begin = 0.0, end = 0.7)
 
@@ -289,16 +308,21 @@ ggplot2::ggsave(
   ),
   convolution_plot,
   height = 14,
-  width = 12)
+  width = 12
+)
 
 # compare relative difference between the two methods
 relative_difference_plot <- combined_incidence |>
-  dplyr::mutate(data = dplyr::if_else(data == "Deconvolution", "d", "f"),
-    age_group = factor(age_group, levels = c("All", age_group_order))) |>
+  dplyr::mutate(
+    data = dplyr::if_else(data == "Deconvolution", "d", "f"),
+    age_group = factor(age_group, levels = c("All", age_group_order))
+  ) |>
   tidyr::pivot_wider(names_from = data, values_from = dplyr::starts_with("pi")) |>
-  dplyr::mutate(diff_50 = (pi_50_f - pi_50_d) / pi_50_d,
+  dplyr::mutate(
+    diff_50 = (pi_50_f - pi_50_d) / pi_50_d,
     diff_5 = (pi_5_f - pi_5_d) / pi_5_d,
-    diff_95 = (pi_95_f - pi_95_d) / pi_95_d) |>
+    diff_95 = (pi_95_f - pi_95_d) / pi_95_d
+  ) |>
   ggplot() +
   geom_hline(aes(yintercept = 0), linetype = 2) +
   geom_line(aes(x = date, y = diff_50)) +
@@ -317,7 +341,8 @@ relative_difference_plot <- combined_incidence |>
   ) +
   theme(
     axis.text.x = element_text(size = 12),
-    legend.position = "bottom")
+    legend.position = "bottom"
+  )
 
 relative_difference_plot
 
@@ -328,4 +353,5 @@ ggplot2::ggsave(
   ),
   relative_difference_plot,
   height = 14,
-  width = 12)
+  width = 12
+)

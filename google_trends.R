@@ -14,7 +14,7 @@ box::use(
 
 message("loading data")
 
-db <- # DATABASE ACCESS - REMOVED
+db <- dummy_data_base() # DATABASE ACCESS - REMOVED
 
 study_start_date <- "2023-11-14"
 study_end_date <- "2024-03-07"
@@ -23,20 +23,23 @@ study_end_date <- "2024-03-07"
 gt_symptoms <- db$table_name |>
   dplyr::collect() |>
   dplyr::select(date, symptom, value) |>
-  dplyr::filter(date >= as.Date(study_start_date),
-    date < as.Date(study_end_date))
+  dplyr::filter(
+    date >= as.Date(study_start_date),
+    date < as.Date(study_end_date)
+  )
 
 message("finished loading script")
 
 fs::dir_create(here::here(
   "outputs",
-  "data")
-)
+  "data"
+))
 
 
 ggplot2::theme_set(projection_plots$theme_pancasts())
 
-gt_symptom_opts <- c("fever",
+gt_symptom_opts <- c(
+  "fever",
   "headache",
   "fatigue",
   "cough",
@@ -54,7 +57,8 @@ dotw_order <- c(
   "Wednesday",
   "Thursday",
   "Friday",
-  "Saturday")
+  "Saturday"
+)
 
 
 input_data <- gt_symptoms |>
@@ -70,7 +74,8 @@ input_data <- gt_symptoms |>
     t = 1 + as.integer(date) - as.integer(min(date)),
     symptom = as.factor(symptom),
     dotw = as.integer(factor(dotw, levels = dotw_order)),
-    .by = "symptom") |>
+    .by = "symptom"
+  ) |>
   # we are separating by symptom when we model later so want a row per symptom
   dplyr::mutate(.row = dplyr::row_number(), .by = "symptom")
 
@@ -80,21 +85,25 @@ models <- input_data |>
   tidyr::nest(data = -symptom) |>
   # map over each symptom to fit a model independently
   dplyr::mutate(
-    model = purrr::map(data,
+    model = purrr::map(
+      data,
       \(data) {
         # divide value by 100 to scale to (0,1)
-        mgcv::gam(value / 100 ~
-          1 +
-          # set a lengthscale of 7 as small relative to
-          # the timeseries length
-          s(t, bs = "gp", m = c(2, 7, 2))  +
-          # choosing k=4 as a minimum
-          s(dotw, bs = "cc", k = 4) +
-          is_bank_holiday,
-        data = data,
-        method = "REML",
-        family = betar(link = "logit"))
-      })
+        mgcv::gam(
+          value / 100 ~
+            1 +
+            # set a lengthscale of 7 as small relative to
+            # the timeseries length
+            s(t, bs = "gp", m = c(2, 7, 2)) +
+            # choosing k=4 as a minimum
+            s(dotw, bs = "cc", k = 4) +
+            is_bank_holiday,
+          data = data,
+          method = "REML",
+          family = betar(link = "logit")
+        )
+      }
+    )
   )
 
 message("Generating natural scale samples")
@@ -112,16 +121,16 @@ samples <- models |>
         seed = 1,
         # exclude DOW and holiday to show trend rather
         # than artifacts
-        exclude = c("s(dotw)", "is_bank_holiday"
-        ),
-        n = 1000)
+        exclude = c("s(dotw)", "is_bank_holiday"),
+        n = 1000
+      )
     }
   )) |>
   dplyr::select(-c(data, model)) |>
   tidyr::unnest("posterior_samples") |>
   dplyr::right_join(input_data, by = c("symptom", ".row")) |>
   # convert fitted values back to RV scale
-  dplyr::mutate(.fitted =  100 * .fitted)
+  dplyr::mutate(.fitted = 100 * .fitted)
 
 # summarise model predictions
 results <- samples |>
@@ -132,7 +141,8 @@ results <- samples |>
     pi_75 = quantile(.fitted, 0.75),
     pi_25 = quantile(.fitted, 0.25),
     value = unique(value),
-    .by = c("date", "symptom"))
+    .by = c("date", "symptom")
+  )
 
 # make a nice plot
 natural_plot <- results |>
@@ -156,7 +166,8 @@ gr_samples <- models |>
   dplyr::mutate(gr_posterior_samples = purrr::pmap(
     list(m = model, d = data),
     \(m, d) {
-      gratia::derivative_samples(object = m,
+      gratia::derivative_samples(
+        object = m,
         data = d,
         focal = "t",
         type = "central",
@@ -165,7 +176,8 @@ gr_samples <- models |>
         # we aren't so worried about showing the day of week
         exclude = c("s(dotw)", "is_bank_holiday"),
         n_sim = 1000,
-        eps = 0.001)
+        eps = 0.001
+      )
     }
   )) |>
   dplyr::select(-c(data, model)) |>
@@ -182,7 +194,8 @@ gr_results <- gr_samples |>
     pi_5 = quantile(.derivative, 0.05),
     pi_75 = quantile(.derivative, 0.75),
     pi_25 = quantile(.derivative, 0.25),
-    .by = c("date", "symptom"))
+    .by = c("date", "symptom")
+  )
 
 gr_plot <- gr_results |>
   dplyr::mutate(symptom = stringr::str_replace_all(symptom, "_", " ")) |>
@@ -198,8 +211,10 @@ gr_plot <- gr_results |>
 
 gr_plot
 
-combined_plot <- natural_plot / gr_plot + patchwork::plot_layout(guides = "collect",
-  axes = "collect_x")
+combined_plot <- natural_plot / gr_plot + patchwork::plot_layout(
+  guides = "collect",
+  axes = "collect_x"
+)
 
 message("Saving outputs")
 
@@ -235,8 +250,8 @@ readr::write_csv(gr_results,
 fs::dir_create(here::here(
   "outputs",
   "figures",
-  "google_trends")
-)
+  "google_trends"
+))
 
 ggplot2::ggsave(
   filename = here::here(
@@ -247,6 +262,7 @@ ggplot2::ggsave(
   ),
   plot = combined_plot,
   width = 8,
-  height = 12)
+  height = 12
+)
 
 message("GOOGLE TRENDS MODEL COMPLETE")

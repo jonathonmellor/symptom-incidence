@@ -20,13 +20,13 @@ ggplot2::theme_set(ggplot2::theme_bw())
 fs::dir_create(here::here(
   "outputs",
   "figures",
-  "compare")
-)
+  "compare"
+))
 
 fs::dir_create(here::here(
   "outputs",
-  "tables")
-)
+  "tables"
+))
 
 symptom_opts <- c(
   "cough",
@@ -55,15 +55,19 @@ wcis_data <- readr::read_csv(
     "symptom_incidence.csv"
   )
 ) |>
-  dplyr::summarise(incidence = sum(incidence),
+  dplyr::summarise(
+    incidence = sum(incidence),
     population = sum(population),
-    .by = c("symptom", "date", "age_group", ".draw"))
+    .by = c("symptom", "date", "age_group", ".draw")
+  )
 
 # combine all ages and national into one data frame
 wcis_samples <- wcis_data |>
-  dplyr::summarise(incidence = sum(incidence),
+  dplyr::summarise(
+    incidence = sum(incidence),
     population = sum(population),
-    .by = c("symptom", "date", ".draw")) |>
+    .by = c("symptom", "date", ".draw")
+  ) |>
   dplyr::mutate(age_group = "All") |>
   dplyr::bind_rows(wcis_data)
 
@@ -77,14 +81,16 @@ wcis_summary <- wcis_samples |>
     pi_5 = quantile(incidence, 0.05),
     pi_75 = quantile(incidence, 0.75),
     pi_25 = quantile(incidence, 0.25),
-    .by = c("symptom", "age_group", "date")) |>
+    .by = c("symptom", "age_group", "date")
+  ) |>
   dplyr::mutate(data = age_group)
 
 
 # WCIS growth rates
 wcis_gr_samples <- wcis_samples |>
   dplyr::arrange(symptom, .draw, age_group, date) |>
-  dplyr::mutate(diff_time = as.numeric(date - lag(date)),
+  dplyr::mutate(
+    diff_time = as.numeric(date - lag(date)),
     diff_incidence = incidence - lag(incidence),
     wcis_gr = (diff_incidence / diff_time) / incidence * 100
   ) |>
@@ -100,7 +106,8 @@ wcis_gr_summary <- wcis_gr_samples |>
     pi_5 = quantile(wcis_gr, 0.05),
     pi_75 = quantile(wcis_gr, 0.75),
     pi_25 = quantile(wcis_gr, 0.25),
-    .by = c("symptom", "age_group", "date")) |>
+    .by = c("symptom", "age_group", "date")
+  ) |>
   dplyr::mutate(data = age_group)
 
 
@@ -112,7 +119,8 @@ gt_samples <- readr::read_csv(
     "gt_samples.csv"
   )
 ) |>
-  dplyr::mutate(data = "Google trends",
+  dplyr::mutate(
+    data = "Google trends",
     symptom = replace(symptom, symptom == "shortness_of_breath", "short_breath"),
     symptom = replace(symptom, symptom == "anosmia", "loss_smell")
   ) |>
@@ -128,14 +136,16 @@ gt_summary <- gt_samples |>
     pi_75 = quantile(.fitted, 0.75),
     pi_25 = quantile(.fitted, 0.25),
     value = unique(value),
-    .by = c("date", "symptom")) |>
+    .by = c("date", "symptom")
+  ) |>
   dplyr::mutate(data = "Google trends")
 
 
 # load google trends growth rates
 gt_gr_samples <- gt_samples |>
   dplyr::arrange(symptom, .draw, date) |>
-  dplyr::mutate(diff_time = as.numeric(date - lag(date)),
+  dplyr::mutate(
+    diff_time = as.numeric(date - lag(date)),
     diff_incidence = .fitted - lag(.fitted),
     gt_gr = (diff_incidence / diff_time) / .fitted * 100
   ) |>
@@ -151,7 +161,8 @@ gt_gr_summary <- gt_gr_samples |>
     pi_5 = quantile(gt_gr, 0.05),
     pi_75 = quantile(gt_gr, 0.75),
     pi_25 = quantile(gt_gr, 0.25),
-    .by = c("date", "symptom")) |>
+    .by = c("date", "symptom")
+  ) |>
   dplyr::mutate(data = "Google trends")
 
 
@@ -160,8 +171,9 @@ gt_gr_summary <- gt_gr_samples |>
 # plot incidence vs google trends
 incidence_plot <- dplyr::bind_rows(wcis_summary, gt_summary) |>
   ggplot() +
-  geom_ribbon(aes(x = date, ymax = pi_95, ymin =  pi_5, fill = symptom, group = symptom),
-    alpha = 0.6) +
+  geom_ribbon(aes(x = date, ymax = pi_95, ymin = pi_5, fill = symptom, group = symptom),
+    alpha = 0.6
+  ) +
   geom_line(aes(x = date, y = pi_50, group = symptom)) +
   labs(x = "Date", y = "Incidence rate of symptom per day") +
   theme(axis.text.x = element_text(size = 8, angle = 90)) +
@@ -178,19 +190,21 @@ incidence_plot <- dplyr::bind_rows(wcis_summary, gt_summary) |>
   ) +
   theme(
     axis.text.x = element_text(size = 12),
-    legend.position = "none")
+    legend.position = "none"
+  )
 
 incidence_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "compare",
-  "incidence_comparison.png"
-),
-incidence_plot,
-height = 14,
-width = 12
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "compare",
+    "incidence_comparison.png"
+  ),
+  incidence_plot,
+  height = 14,
+  width = 12
 )
 
 
@@ -198,8 +212,9 @@ width = 12
 gr_plot <- dplyr::bind_rows(wcis_gr_summary, gt_gr_summary) |>
   ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.3) +
-  geom_ribbon(aes(x = date, ymax = pi_95, ymin =  pi_5, fill = symptom, group = symptom),
-    alpha = 0.6) +
+  geom_ribbon(aes(x = date, ymax = pi_95, ymin = pi_5, fill = symptom, group = symptom),
+    alpha = 0.6
+  ) +
   geom_line(aes(x = date, y = pi_50, group = symptom)) +
   labs(x = "Date", y = "Growth rate of symptom incidence per day") +
   theme(axis.text.x = element_text(size = 8, angle = 90)) +
@@ -214,20 +229,23 @@ gr_plot <- dplyr::bind_rows(wcis_gr_summary, gt_gr_summary) |>
     independent = "y",
     labeller = labeller(symptom = as_labeller(symptom_labels))
   ) +
-  theme(axis.text.x = element_text(size = 12),
-    legend.position = "none")
+  theme(
+    axis.text.x = element_text(size = 12),
+    legend.position = "none"
+  )
 
 gr_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "compare",
-  "gr_comparison.png"
-),
-gr_plot,
-height = 14,
-width = 12
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "compare",
+    "gr_comparison.png"
+  ),
+  gr_plot,
+  height = 14,
+  width = 12
 )
 
 
@@ -235,8 +253,10 @@ width = 12
 ccf_incidence <- dplyr::inner_join(wcis_samples, gt_samples, by = c("symptom", "date", ".draw")) |>
   dplyr::arrange(symptom, age_group, date) |>
   dplyr::group_by(symptom, age_group, .draw) |>
-  dplyr::reframe(ccf = c(ccf(incidence, .fitted, plot = FALSE))$acf,
-    lag = c(ccf(incidence, .fitted, plot = FALSE))$lag) |>
+  dplyr::reframe(
+    ccf = c(ccf(incidence, .fitted, plot = FALSE))$acf,
+    lag = c(ccf(incidence, .fitted, plot = FALSE))$lag
+  ) |>
   dplyr::ungroup()
 
 ccf_incidence_plot <- ccf_incidence |>
@@ -246,7 +266,8 @@ ccf_incidence_plot <- ccf_incidence |>
     pi_5 = quantile(ccf, 0.05),
     pi_75 = quantile(ccf, 0.75),
     pi_25 = quantile(ccf, 0.25),
-    .by = c("symptom", "age_group", "lag")) |>
+    .by = c("symptom", "age_group", "lag")
+  ) |>
   ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
   geom_ribbon(aes(x = lag, ymin = pi_5, ymax = pi_95, fill = symptom), alpha = 0.6) +
@@ -262,15 +283,16 @@ ccf_incidence_plot <- ccf_incidence |>
 
 ccf_incidence_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "compare",
-  "incidence_ccf.png"
-),
-ccf_incidence_plot,
-height = 12,
-width = 12
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "compare",
+    "incidence_ccf.png"
+  ),
+  ccf_incidence_plot,
+  height = 12,
+  width = 12
 )
 
 sf_digits <- 2
@@ -286,18 +308,23 @@ max_lags_incidence <- ccf_incidence |>
     lag_pi_50 = quantile(lag, 0.5),
     lag_pi_95 = quantile(lag, 0.95),
     lag_pi_5 = quantile(lag, 0.05),
-    .by = c("symptom", "age_group")) |>
-  dplyr::summarise(value =
-    glue::glue(
-      "{formatC(signif(lag_pi_50, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}",
-      " [{formatC(signif(lag_pi_5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
-      " {formatC(signif(lag_pi_95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"
-    ),
-  .by = c("symptom", "age_group")) |>
+    .by = c("symptom", "age_group")
+  ) |>
+  dplyr::summarise(
+    value =
+      glue::glue(
+        "{formatC(signif(lag_pi_50, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}",
+        " [{formatC(signif(lag_pi_5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
+        " {formatC(signif(lag_pi_95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"
+      ),
+    .by = c("symptom", "age_group")
+  ) |>
   dplyr::mutate(age_group = factor(age_group, levels = c("All", age_group_order))) |>
   dplyr::arrange(age_group) |>
-  tidyr::pivot_wider(names_from = age_group,
-    values_from = value)
+  tidyr::pivot_wider(
+    names_from = age_group,
+    values_from = value
+  )
 
 max_lags_incidence
 
@@ -320,16 +347,23 @@ max_corrs_incidence <- ccf_incidence |>
     ccf_pi_50 = quantile(ccf, 0.5),
     ccf_pi_95 = quantile(ccf, 0.95),
     ccf_pi_5 = quantile(ccf, 0.05),
-    .by = c("symptom", "age_group")) |>
-  dplyr::summarise(value = glue::glue("{formatC(signif(ccf_pi_50, digits=sf_digits)",
-    ", format=sf_format, digits=sf_digits,flag='#')}",
-    " [{formatC(signif(ccf_pi_5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
-    " {formatC(signif(ccf_pi_95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"),
-  .by = c("symptom", "age_group")) |>
+    .by = c("symptom", "age_group")
+  ) |>
+  dplyr::summarise(
+    value = glue::glue(
+      "{formatC(signif(ccf_pi_50, digits=sf_digits)",
+      ", format=sf_format, digits=sf_digits,flag='#')}",
+      " [{formatC(signif(ccf_pi_5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
+      " {formatC(signif(ccf_pi_95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"
+    ),
+    .by = c("symptom", "age_group")
+  ) |>
   dplyr::mutate(age_group = factor(age_group, levels = c("All", age_group_order))) |>
   dplyr::arrange(age_group) |>
-  tidyr::pivot_wider(names_from = age_group,
-    values_from = value)
+  tidyr::pivot_wider(
+    names_from = age_group,
+    values_from = value
+  )
 
 max_corrs_incidence
 
@@ -347,8 +381,10 @@ readr::write_csv(max_corrs_incidence,
 ccf_gr <- dplyr::inner_join(wcis_gr_samples, gt_gr_samples, by = c("symptom", "date", ".draw")) |>
   dplyr::arrange(symptom, age_group, date) |>
   dplyr::group_by(symptom, age_group, .draw) |>
-  dplyr::reframe(ccf = c(ccf(wcis_gr, gt_gr, plot = FALSE))$acf,
-    lag = c(ccf(wcis_gr, gt_gr, plot = FALSE))$lag) |>
+  dplyr::reframe(
+    ccf = c(ccf(wcis_gr, gt_gr, plot = FALSE))$acf,
+    lag = c(ccf(wcis_gr, gt_gr, plot = FALSE))$lag
+  ) |>
   dplyr::ungroup()
 
 ccf_gr_plot <- ccf_gr |>
@@ -358,7 +394,8 @@ ccf_gr_plot <- ccf_gr |>
     pi_5 = quantile(ccf, 0.05),
     pi_75 = quantile(ccf, 0.75),
     pi_25 = quantile(ccf, 0.25),
-    .by = c("symptom", "age_group", "lag")) |>
+    .by = c("symptom", "age_group", "lag")
+  ) |>
   ggplot() +
   geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
   geom_ribbon(aes(x = lag, ymin = pi_5, ymax = pi_95, fill = symptom), alpha = 0.6) +
@@ -374,15 +411,16 @@ ccf_gr_plot <- ccf_gr |>
 
 ccf_gr_plot
 
-ggplot2::ggsave(here::here(
-  "outputs",
-  "figures",
-  "compare",
-  "gr_ccf.png"
-),
-ccf_gr_plot,
-height = 12,
-width = 12
+ggplot2::ggsave(
+  here::here(
+    "outputs",
+    "figures",
+    "compare",
+    "gr_ccf.png"
+  ),
+  ccf_gr_plot,
+  height = 12,
+  width = 12
 )
 
 max_lags_gr <- ccf_gr |>
@@ -395,16 +433,23 @@ max_lags_gr <- ccf_gr |>
     lag_pi_50 = quantile(lag, 0.5),
     lag_pi_95 = quantile(lag, 0.95),
     lag_pi_5 = quantile(lag, 0.05),
-    .by = c("symptom", "age_group")) |>
-  dplyr::summarise(value = glue::glue("{formatC(signif(lag_pi_50, digits=sf_digits),",
-    " format=sf_format, digits=sf_digits,flag='#')}",
-    " [{formatC(signif(lag_pi_5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
-    " {formatC(signif(lag_pi_95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"),
-  .by = c("symptom", "age_group")) |>
+    .by = c("symptom", "age_group")
+  ) |>
+  dplyr::summarise(
+    value = glue::glue(
+      "{formatC(signif(lag_pi_50, digits=sf_digits),",
+      " format=sf_format, digits=sf_digits,flag='#')}",
+      " [{formatC(signif(lag_pi_5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
+      " {formatC(signif(lag_pi_95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"
+    ),
+    .by = c("symptom", "age_group")
+  ) |>
   dplyr::mutate(age_group = factor(age_group, levels = c("All", age_group_order))) |>
   dplyr::arrange(age_group) |>
-  tidyr::pivot_wider(names_from = age_group,
-    values_from = value)
+  tidyr::pivot_wider(
+    names_from = age_group,
+    values_from = value
+  )
 
 max_lags_gr
 
@@ -426,17 +471,22 @@ max_corrs_gr <- ccf_gr |>
     ccf_pi_50 = quantile(ccf, 0.5),
     ccf_pi_95 = quantile(ccf, 0.95),
     ccf_pi_5 = quantile(ccf, 0.05),
-    .by = c("symptom", "age_group")) |>
-  dplyr::summarise(value = glue::glue(
-    "{formatC(signif(ccf_pi_50, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}",
-    " [{formatC(signif(ccf_pi_5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
-    " {formatC(signif(ccf_pi_95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"
-  ),
-  .by = c("symptom", "age_group")) |>
+    .by = c("symptom", "age_group")
+  ) |>
+  dplyr::summarise(
+    value = glue::glue(
+      "{formatC(signif(ccf_pi_50, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}",
+      " [{formatC(signif(ccf_pi_5, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')},",
+      " {formatC(signif(ccf_pi_95, digits=sf_digits), format=sf_format, digits=sf_digits,flag='#')}]"
+    ),
+    .by = c("symptom", "age_group")
+  ) |>
   dplyr::mutate(age_group = factor(age_group, levels = c("All", age_group_order))) |>
   dplyr::arrange(age_group) |>
-  tidyr::pivot_wider(names_from = age_group,
-    values_from = value)
+  tidyr::pivot_wider(
+    names_from = age_group,
+    values_from = value
+  )
 
 readr::write_csv(max_corrs_gr,
   file = here::here(
@@ -464,17 +514,22 @@ combined_gr_ccf_summarised <- combined_gr_ccf |>
     lag_pi_50 = quantile(lag, 0.5),
     lag_pi_95 = quantile(lag, 0.95),
     lag_pi_5 = quantile(lag, 0.05),
-    .by = c("symptom", "age_group")) |>
-  dplyr::mutate(age_group = factor(age_group, c("All", age_group_order)),
-    symptom = factor(symptom, labels = symptom_labels))
+    .by = c("symptom", "age_group")
+  ) |>
+  dplyr::mutate(
+    age_group = factor(age_group, c("All", age_group_order)),
+    symptom = factor(symptom, labels = symptom_labels)
+  )
 
 colours <- c("black", RColorBrewer::brewer.pal(n = 9, "Spectral"))
 colours <- colours[-c(5, 6)]
 colours[5] <- "#BA8E23"
 
-jitter <- position_jitter(seed = 123,
+jitter <- position_jitter(
+  seed = 123,
   width = 0.5,
-  height = 0.05)
+  height = 0.05
+)
 
 # facet by symptom to allow age group comparison within a symptom group
 combined_gr_ccf_summarised |>
@@ -483,20 +538,23 @@ combined_gr_ccf_summarised |>
   geom_vline(aes(xintercept = 0), linetype = 2, alpha = 0.4) +
   geom_linerange(aes(ymin = ccf_pi_5, ymax = ccf_pi_95, color = age_group), alpha = 1, position = jitter) +
   geom_linerange(aes(xmin = lag_pi_5, xmax = lag_pi_95, color = age_group), alpha = 1, position = jitter) +
-  geom_point(aes(color = age_group, size = is_national
-  ), position = jitter) +
+  geom_point(aes(color = age_group, size = is_national), position = jitter) +
   scale_x_continuous(breaks = seq(-15, 15, 5), minor_breaks = seq(-20, 20, 1)) +
   scale_y_continuous(breaks = seq(0, 1, 0.2)) +
   coord_cartesian(ylim = c(0, 1)) +
   scale_size_manual(values = c("A" = 2, "B" = 1.5)) +
   scale_shape_manual(values = c("A" = 19, "B" = 1)) +
-  labs(y = "Maximum cross correlation",
-    x = "Lag (days) of maximum cross correlation") +
+  labs(
+    y = "Maximum cross correlation",
+    x = "Lag (days) of maximum cross correlation"
+  ) +
   scale_color_manual(name = "Age group", values = colours) +
   facet_wrap(~symptom) +
   theme(legend.position = "bottom") +
-  guides(size = "none",
+  guides(
+    size = "none",
     shape = "none",
-    color = guide_legend(nrow = 2, byrow = TRUE))
+    color = guide_legend(nrow = 2, byrow = TRUE)
+  )
 
 message("COMPARISON COMPLETE")
