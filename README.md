@@ -1,6 +1,10 @@
 # Symptom Incidence Google WCIS
 
-Code for the upcoming manuscript: "Evaluating Google Trends as a Proxy for Symptom Incidence: Insights from the Winter COVID Infection Study in England 2023/24"
+Code for the manuscript: "Evaluating Google Trends as a Proxy for Symptom Incidence: Insights from the Winter COVID Infection Study in England 2023/24", published in _Epidemiology & Infection_.
+
+[Link to paper](https://www.cambridge.org/core/journals/epidemiology-and-infection/article/evaluating-google-trends-as-a-proxy-for-symptom-incidence-insights-from-the-winter-covid19-infection-study-in-england-202324/2A8BC161D65CD499F26BC887AB137E24)
+
+DOI: doi.org/10.1017/S0950268825100794
 
 Authors: Phoebe Asplin (@pasplin), Martyn Fyles, Jack Kennedy (@jcken95), Thomas Ward, and Jonathon Mellor (@jonathonmellor).
 
